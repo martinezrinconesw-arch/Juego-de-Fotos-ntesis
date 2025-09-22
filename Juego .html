@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de la Fotosíntesis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f2fe;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            flex-direction: column;
+        }
+
+        .game-container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            width: 700px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #0c4a6e;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            color: #1e40af;
+            font-weight: 500;
+        }
+
+        .options-container {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .option-button {
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            background-color: #eff6ff;
+            color: #1c5270;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #bfdbfe;
+            user-select: none;
+        }
+
+        .option-button:hover {
+            background-color: #dbeafe;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-button.correct {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            animation: pulseCorrect 1s infinite;
+        }
+
+        .option-button.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes pulseCorrect {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .result-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-weight: bold;
+            display: none;
+            text-align: center;
+        }
+
+        .result-correct {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .result-incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .next-button {
+            padding: 0.75rem 1.5rem;
+            background-color: #3b82f6;
+            color: #fff;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .next-button:hover {
+            background-color: #2563eb;
+        }
+
+        .start-button, .restart-button {
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
+            background-color: #10b981;
+            color: #fff;
+            border-radius: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .start-button:hover, .restart-button:hover {
+            background-color: #059669;
+        }
+
+        .image-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 0.75rem;
+            background-color: #10b981;
+            transition: width 0.5s ease-in-out;
+            border-radius: 9999px;
+        }
+
+        /* Estilos específicos para el juego de arrastrar y soltar */
+        .drag-drop-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .concept-item {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            cursor: grab;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            user-select: none;
+            text-align: center;
+            line-height: 1.5; /* Ajuste para evitar desbordamiento */
+        }
+        
+        .concept-item:active {
+            cursor: grabbing;
+        }
+
+        .drop-zone {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #f0f9ff;
+            border: 2px dashed #93c5fd;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #3b82f6;
+            text-align: center;
+        }
+
+        .drop-zone.correct-drop {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            font-weight: bold;
+            color: #166534;
+        }
+
+        #concepts-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            background-color: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            min-height: 100px;
+        }
+
+        .drop-zone-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Estilos para el juego de emparejar */
+        .matching-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            background-color: #f1f5f9;
+            padding: 1rem;
+            border-radius: 1rem;
+        }
+
+        .matching-card {
+            padding: 1.5rem 1rem;
+            border-radius: 0.75rem;
+            background-color: #fff;
+            border: 2px solid #cbd5e1;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-align: center;
+            user-select: none;
+        }
+        
+        .matching-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .matching-card.selected {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px #bfdbfe;
+        }
+
+        .matching-card.matched {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            cursor: default;
+            color: #166534;
+        }
+
+        .matching-card.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            animation: shake 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen" class="game-container flex flex-col items-center">
+        <h1 class="title">¡Aprende sobre la Fotosíntesis!</h1>
+        <p class="text-gray-600 mb-4">Un juego para explorar sus aplicaciones en biotecnología y sostenibilidad.</p>
+        <button id="start-button" class="start-button">Comenzar Juego</button>
+    </div>
+
+    <!-- Pantalla del Quiz -->
+    <div id="quiz-screen" class="game-container hidden">
+        <h1 class="title">Quiz Interactivo</h1>
+        <div class="progress-bar-container">
+            <div id="quiz-progress-bar" class="progress-bar" style="width: 0%;"></div>
+        </div>
+        <div id="quiz-image" class="image-container"></div>
+        <div id="quiz-question-text" class="question-text"></div>
+        <div id="quiz-options-container" class="options-container"></div>
+        <div id="quiz-feedback-container" class="mt-4">
+            <div id="quiz-result-message" class="result-message hidden"></div>
+            <button id="quiz-next-button" class="next-button hidden">Siguiente</button>
+        </div>
+    </div>
+
+    <!-- Pantalla del Juego de Arrastrar y Soltar -->
+    <div id="drag-drop-screen" class="game-container hidden">
+        <h1 class="title">Juego de Arrastrar y Soltar</h1>
+        <p class="text-gray-600 mb-4">Arrastra cada concepto a su categoría correcta.</p>
+        <div class="drag-drop-container">
+            <div id="concepts-container"></div>
+            <div id="drop-zone-container" class="drop-zone-container"></div>
+        </div>
+        <div id="drag-drop-feedback" class="result-message mt-4 hidden"></div>
+        <button id="drag-drop-next-button" class="next-button mt-4 hidden">Continuar</button>
+    </div>
+
+    <!-- Pantalla del Juego de Emparejar -->
+    <div id="matching-screen" class="game-container hidden">
+        <h1 class="title">Juego de Emparejar</h1>
+        <p class="text-gray-600 mb-4">Haz clic en un concepto y luego en su definición para emparejarlos.</p>
+        <div id="matching-grid" class="matching-grid"></div>
+        <div id="matching-feedback" class="result-message mt-4 hidden"></div>
+        <button id="matching-next-button" class="next-button mt-4 hidden">Ver Resultados</button>
+    </div>
+
+    <!-- Pantalla de Resultados Finales -->
+    <div id="results-screen" class="game-container hidden">
+        <h1 class="title">¡Resultados Finales!</h1>
+        <div id="results-summary" class="text-left mt-4">
+            <div class="p-4 rounded-lg bg-gray-100 mb-4">
+                <h3 class="font-bold text-lg text-blue-800">Quiz Interactivo: <span id="quiz-score" class="font-normal text-gray-700"></span></h3>
+            </div>
+            <div class="p-4 rounded-lg bg-gray-100 mb-4">
+                <h3 class="font-bold text-lg text-blue-800">Juego de Arrastrar y Soltar: <span id="drag-drop-score" class="font-normal text-gray-700"></span></h3>
+            </div>
+            <div class="p-4 rounded-lg bg-gray-100 mb-4">
+                <h3 class="font-bold text-lg text-blue-800">Juego de Emparejar: <span id="matching-score" class="font-normal text-gray-700"></span></h3>
+            </div>
+        </div>
+        <p id="final-message" class="text-xl font-bold mt-4 text-green-600"></p>
+        <button id="restart-button" class="restart-button mt-6">Volver a Jugar</button>
+    </div>
+
+    <script>
+        // Declaración de pantallas y botones
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const dragDropScreen = document.getElementById('drag-drop-screen');
+        const matchingScreen = document.getElementById('matching-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const startButton = document.getElementById('start-button');
+        const quizNextButton = document.getElementById('quiz-next-button');
+        const dragDropNextButton = document.getElementById('drag-drop-next-button');
+        const matchingNextButton = document.getElementById('matching-next-button');
+        const restartButton = document.getElementById('restart-button');
+        
+        // Contenedores del juego
+        const quizImage = document.getElementById('quiz-image');
+        const quizQuestionText = document.getElementById('quiz-question-text');
+        const quizOptionsContainer = document.getElementById('quiz-options-container');
+        const quizResultMessage = document.getElementById('quiz-result-message');
+        const quizProgressBar = document.getElementById('quiz-progress-bar');
+        const conceptsContainer = document.getElementById('concepts-container');
+        const dropZoneContainer = document.getElementById('drop-zone-container');
+        const dragDropFeedback = document.getElementById('drag-drop-feedback');
+        const matchingGrid = document.getElementById('matching-grid');
+        const matchingFeedback = document.getElementById('matching-feedback');
+        const quizScoreDisplay = document.getElementById('quiz-score');
+        const dragDropScoreDisplay = document.getElementById('drag-drop-score');
+        const matchingScoreDisplay = document.getElementById('matching-score');
+        const finalMessage = document.getElementById('final-message');
+
+        // Variables de estado del juego
+        let currentQuizIndex = 0;
+        let scores = {
+            quiz: 0,
+            dragDrop: 0,
+            matching: 0,
+        };
+        let dragDropCompleted = false;
+        let matchingCompleted = false;
+        let selectedMatchingCards = [];
+        
+        // --- Datos de los Juegos ---
+        const quizQuestions = [
+            {
+                question: "¿Cuál de las siguientes es una aplicación de la fotosíntesis en la producción de biocombustibles?",
+                image: "https://placehold.co/600x400/86efac/ffffff?text=Producción+de+Algas",
+                options: [
+                    { text: "Producción de biodiésel a partir de microalgas", isCorrect: true, explanation: "Las microalgas son organismos fotosintéticos que pueden producir lípidos (grasas) ricos en energía. Estos lípidos se extraen y se convierten en biodiésel." },
+                    { text: "Síntesis de medicamentos", isCorrect: false },
+                    { text: "Purificación de agua", isCorrect: false },
+                    { text: "Creación de plásticos biodegradables", isCorrect: false }
+                ]
+            },
+            {
+                question: "¿Cómo ayuda la fotosíntesis en la captura de CO2 para mitigar el cambio climático?",
+                image: "https://placehold.co/600x400/93c5fd/ffffff?text=Captura+de+CO2",
+                options: [
+                    { text: "Liberando oxígeno", isCorrect: false },
+                    { text: "Convirtiendo el CO2 en glucosa y oxígeno", isCorrect: true, explanation: "La fotosíntesis es el proceso natural por el cual las plantas y otros organismos absorben dióxido de carbono de la atmósfera y lo convierten en azúcares (glucosa) para su energía, reduciendo así la concentración de CO2 en el aire." },
+                    { text: "Produciendo nitrógeno", isCorrect: false },
+                    { text: "Descomponiendo el CO2 en la noche", isCorrect: false }
+                ]
+            },
+            {
+                question: "¿Qué es la 'fotosíntesis artificial'?",
+                image: "https://placehold.co/600x400/fecaca/ffffff?text=Fotosíntesis+Artificial",
+                options: [
+                    { text: "El uso de luz solar para calentar agua", isCorrect: false },
+                    { text: "La imitación del proceso fotosintético para producir combustible o energía", isCorrect: true, explanation: "La fotosíntesis artificial busca replicar el proceso de las plantas para convertir la energía solar en combustibles limpios (como el hidrógeno) o electricidad, de manera más eficiente." },
+                    { text: "El proceso de las plantas de noche", isCorrect: false },
+                    { text: "Una técnica de agricultura de interior", isCorrect: false }
+                ]
+            }
+        ];
+
+        const dragDropData = {
+            concepts: [
+                { text: "Producción de biodiésel", category: "Biocombustibles" },
+                { text: "Generación de hidrógeno", category: "Fotosíntesis Artificial" },
+                { text: "Secuestro de carbono", category: "Captura de CO2" },
+                { text: "Mejora del rendimiento de cultivos", category: "Agricultura" },
+                { text: "Producción de vitamina D", category: "Fotosíntesis Humana" }
+            ],
+            categories: [
+                "Biocombustibles",
+                "Fotosíntesis Artificial",
+                "Agricultura",
+                "Captura de CO2",
+                "Fotosíntesis Humana"
+            ]
+        };
+
+        const matchingData = [
+            { text: "Biocombustibles", match: "Energía limpia a partir de biomasa" },
+            { text: "Captura de CO2", match: "Reducir el carbono atmosférico" },
+            { text: "Fotosíntesis artificial", match: "Imitar el proceso para generar energía" },
+            { text: "Agricultura", match: "Optimización del crecimiento de cultivos" },
+            { text: "Fotosíntesis humana", match: "Producción de vitamina D en la piel" }
+        ];
+
+        // --- Lógica General del Juego ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function showScreen(screen) {
+            startScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            dragDropScreen.classList.add('hidden');
+            matchingScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            screen.classList.remove('hidden');
+        }
+
+        function startGame(gameName) {
+            switch(gameName) {
+                case 'quiz':
+                    initQuiz();
+                    break;
+                case 'drag-drop':
+                    initDragDrop();
+                    break;
+                case 'matching':
+                    initMatching();
+                    break;
+                default:
+                    showScreen(startScreen);
+            }
+        }
+
+        function endGame() {
+            showScreen(resultsScreen);
+            updateResults();
+        }
+
+        function resetGame() {
+            scores.quiz = 0;
+            scores.dragDrop = 0;
+            scores.matching = 0;
+            currentQuizIndex = 0;
+            dragDropCompleted = false;
+            matchingCompleted = false;
+            selectedMatchingCards = [];
+            showScreen(startScreen);
+        }
+
+        // --- Lógica del Quiz ---
+        function initQuiz() {
+            shuffleArray(quizQuestions);
+            currentQuizIndex = 0;
+            scores.quiz = 0;
+            showQuizQuestion();
+            updateQuizProgress();
+        }
+
+        function showQuizQuestion() {
+            const questionData = quizQuestions[currentQuizIndex];
+            quizQuestionText.textContent = questionData.question;
+            
+            if (questionData.image) {
+                quizImage.innerHTML = `<img src="${questionData.image}" alt="Imagen relacionada con la pregunta">`;
+            } else {
+                quizImage.innerHTML = '';
+            }
+
+            quizOptionsContainer.innerHTML = '';
+            quizResultMessage.classList.add('hidden');
+            quizNextButton.classList.add('hidden');
+            
+            questionData.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.classList.add('option-button');
+                button.addEventListener('click', () => handleQuizAnswer(button, option));
+                quizOptionsContainer.appendChild(button);
+            });
+        }
+
+        function handleQuizAnswer(selectedButton, option) {
+            const allButtons = quizOptionsContainer.querySelectorAll('.option-button');
+            allButtons.forEach(btn => btn.disabled = true);
+
+            if (option.isCorrect) {
+                selectedButton.classList.add('correct');
+                scores.quiz++;
+                quizResultMessage.textContent = "¡Correcto! " + option.explanation;
+                quizResultMessage.classList.remove('result-incorrect');
+                quizResultMessage.classList.add('result-correct');
+            } else {
+                selectedButton.classList.add('incorrect');
+                quizResultMessage.textContent = "Incorrecto. " + option.explanation;
+                quizResultMessage.classList.remove('result-correct');
+                quizResultMessage.classList.add('result-incorrect');
+                const correctButton = Array.from(allButtons).find(btn => quizQuestions[currentQuizIndex].options.find(opt => opt.text === btn.textContent).isCorrect);
+                if (correctButton) {
+                    correctButton.classList.add('correct');
+                }
+            }
+            quizResultMessage.style.display = 'block';
+            quizNextButton.classList.remove('hidden');
+
+            currentQuizIndex++;
+            updateQuizProgress();
+            
+            // Si es la última pregunta del quiz, el botón Siguiente lleva al siguiente juego
+            if (currentQuizIndex === quizQuestions.length) {
+                quizNextButton.textContent = "Continuar al siguiente juego";
+            }
+        }
+
+        function updateQuizProgress() {
+            const progress = (currentQuizIndex / quizQuestions.length) * 100;
+            quizProgressBar.style.width = `${progress}%`;
+            if (currentQuizIndex === quizQuestions.length) {
+                 quizProgressBar.style.backgroundColor = '#10b981';
+            }
+        }
+
+        // --- Lógica de Arrastrar y Soltar ---
+        function initDragDrop() {
+            shuffleArray(dragDropData.concepts);
+            scores.dragDrop = 0;
+            dragDropCompleted = false;
+            dragDropFeedback.classList.add('hidden');
+            dragDropNextButton.classList.add('hidden');
+            conceptsContainer.innerHTML = '';
+            dropZoneContainer.innerHTML = '';
+
+            // Crear los conceptos arrastrables
+            dragDropData.concepts.forEach(concept => {
+                const conceptItem = document.createElement('div');
+                conceptItem.textContent = concept.text;
+                conceptItem.classList.add('concept-item');
+                conceptItem.draggable = true;
+                conceptItem.dataset.category = concept.category;
+                conceptsContainer.appendChild(conceptItem);
+
+                conceptItem.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', e.target.dataset.category);
+                    e.dataTransfer.setDragImage(conceptItem, 0, 0); // Opcional, para evitar arrastrar la imagen por defecto
+                });
+            });
+
+            // Crear las zonas de destino
+            dragDropData.categories.forEach(category => {
+                const dropZone = document.createElement('div');
+                dropZone.textContent = category;
+                dropZone.classList.add('drop-zone');
+                dropZone.dataset.category = category;
+                dropZoneContainer.appendChild(dropZone);
+                
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault(); // Permitir el drop
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const draggedCategory = e.dataTransfer.getData('text/plain');
+                    if (draggedCategory === dropZone.dataset.category) {
+                        const conceptItem = document.querySelector(`.concept-item[data-category="${draggedCategory}"]`);
+                        if (conceptItem) {
+                            dropZone.classList.add('correct-drop');
+                            dropZone.textContent = conceptItem.textContent;
+                            conceptsContainer.removeChild(conceptItem);
+                            scores.dragDrop++;
+                            checkDragDropCompletion();
+                        }
+                    } else {
+                         // Feedback visual para drop incorrecto
+                        dropZone.classList.add('incorrect');
+                        setTimeout(() => dropZone.classList.remove('incorrect'), 500);
+                        dragDropFeedback.textContent = "¡Inténtalo de nuevo! La categoría no es correcta.";
+                        dragDropFeedback.classList.remove('hidden', 'result-correct');
+                        dragDropFeedback.classList.add('result-incorrect');
+                        dragDropFeedback.style.display = 'block';
+                    }
+                });
+            });
+        }
+
+        function checkDragDropCompletion() {
+            if (scores.dragDrop === dragDropData.concepts.length) {
+                dragDropCompleted = true;
+                dragDropFeedback.textContent = "¡Genial! Todas las categorías son correctas.";
+                dragDropFeedback.classList.remove('hidden', 'result-incorrect');
+                dragDropFeedback.classList.add('result-correct');
+                dragDropFeedback.style.display = 'block';
+                dragDropNextButton.classList.remove('hidden');
+            }
+        }
+
+        // --- Lógica del Juego de Emparejar ---
+        function initMatching() {
+            scores.matching = 0;
+            matchingCompleted = false;
+            selectedMatchingCards = [];
+            matchingFeedback.classList.add('hidden');
+            matchingNextButton.classList.add('hidden');
+            matchingGrid.innerHTML = '';
+
+            const allCards = [];
+            matchingData.forEach(item => {
+                allCards.push({ text: item.text, type: 'concept', match: item.match });
+                allCards.push({ text: item.match, type: 'definition', match: item.text });
+            });
+            shuffleArray(allCards);
+
+            allCards.forEach(cardData => {
+                const card = document.createElement('div');
+                card.classList.add('matching-card');
+                card.textContent = cardData.text;
+                card.dataset.match = cardData.match;
+                card.dataset.type = cardData.type;
+                card.addEventListener('click', () => handleMatchingClick(card));
+                matchingGrid.appendChild(card);
+            });
+        }
+
+        function handleMatchingClick(card) {
+            if (card.classList.contains('matched') || selectedMatchingCards.length === 2) {
+                return;
+            }
+
+            card.classList.add('selected');
+            selectedMatchingCards.push(card);
+
+            if (selectedMatchingCards.length === 2) {
+                const [card1, card2] = selectedMatchingCards;
+                if (card1.dataset.match === card2.textContent && card2.dataset.match === card1.textContent) {
+                    // Correct match
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    card1.classList.remove('selected');
+                    card2.classList.remove('selected');
+                    scores.matching++;
+                    matchingFeedback.textContent = "¡Correcto!";
+                    matchingFeedback.classList.remove('hidden', 'result-incorrect');
+                    matchingFeedback.classList.add('result-correct');
+                    matchingFeedback.style.display = 'block';
+                    
+                } else {
+                    // Incorrect match
+                    card1.classList.add('incorrect');
+                    card2.classList.add('incorrect');
+                    matchingFeedback.textContent = "Incorrecto. Inténtalo de nuevo.";
+                    matchingFeedback.classList.remove('hidden', 'result-correct');
+                    matchingFeedback.classList.add('result-incorrect');
+                    matchingFeedback.style.display = 'block';
+
+                    setTimeout(() => {
+                        card1.classList.remove('selected', 'incorrect');
+                        card2.classList.remove('selected', 'incorrect');
+                    }, 1000);
+                }
+                
+                setTimeout(() => {
+                    selectedMatchingCards = [];
+                    checkMatchingCompletion();
+                }, 1000);
+            }
+        }
+
+        function checkMatchingCompletion() {
+            if (scores.matching === matchingData.length) {
+                matchingCompleted = true;
+                matchingFeedback.textContent = "¡Has completado el juego de emparejar!";
+                matchingFeedback.classList.remove('hidden', 'result-incorrect');
+                matchingFeedback.classList.add('result-correct');
+                matchingFeedback.style.display = 'block';
+                matchingNextButton.classList.remove('hidden');
+            }
+        }
+
+        // --- Lógica de Resultados Finales ---
+        function updateResults() {
+            const quizScore = scores.quiz;
+            const dragDropScore = scores.dragDrop;
+            const matchingScore = scores.matching;
+
+            quizScoreDisplay.textContent = `${quizScore} de ${quizQuestions.length}`;
+            dragDropScoreDisplay.textContent = `${dragDropScore} de ${dragDropData.concepts.length}`;
+            matchingScoreDisplay.textContent = `${matchingScore} de ${matchingData.length}`;
+
+            const totalScore = quizScore + dragDropScore + matchingScore;
+            const totalQuestions = quizQuestions.length + dragDropData.concepts.length + matchingData.length;
+            const percentage = (totalScore / totalQuestions) * 100;
+            
+            if (percentage >= 80) {
+                finalMessage.textContent = "¡Excelente trabajo! Eres un experto en fotosíntesis y sus aplicaciones.";
+                finalMessage.classList.add('text-green-600');
+                finalMessage.classList.remove('text-yellow-600', 'text-red-600');
+            } else if (percentage >= 50) {
+                finalMessage.textContent = "¡Buen esfuerzo! Sigue practicando para convertirte en un experto.";
+                finalMessage.classList.add('text-yellow-600');
+                finalMessage.classList.remove('text-green-600', 'text-red-600');
+            } else {
+                finalMessage.textContent = "¡No te rindas! Revisa los conceptos y vuelve a intentarlo.";
+                finalMessage.classList.add('text-red-600');
+                finalMessage.classList.remove('text-green-600', 'text-yellow-600');
+            }
+        }
+
+        // --- Listeners de Eventos ---
+        startButton.addEventListener('click', () => {
+            showScreen(quizScreen);
+            startGame('quiz');
+        });
+        
+        quizNextButton.addEventListener('click', () => {
+            if (currentQuizIndex < quizQuestions.length) {
+                showQuizQuestion();
+            } else {
+                showScreen(dragDropScreen);
+                startGame('drag-drop');
+            }
+        });
+
+        dragDropNextButton.addEventListener('click', () => {
+            showScreen(matchingScreen);
+            startGame('matching');
+        });
+
+        matchingNextButton.addEventListener('click', () => {
+            endGame();
+        });
+
+        restartButton.addEventListener('click', () => {
+            resetGame();
+        });
+    </script>
+</body>
+</html>
